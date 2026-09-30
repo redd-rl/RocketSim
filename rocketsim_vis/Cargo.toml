@@ -14,6 +14,7 @@ categories.workspace = true
 [dependencies]
 egui = "0.31.0"
 egui-miniquad = "0.16.0"
+gilrs = "0.11"
 glam.workspace = true
 miniquad = "0.4.8"
 png = "0.18.0"

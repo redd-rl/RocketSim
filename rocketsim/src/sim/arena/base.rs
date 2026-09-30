@@ -48,6 +48,8 @@ pub trait Vis: Send + Sync + Any {
     /// Called after [`Arena::step_tick`] with the fresh state and `dt`
     /// ([`crate::consts::TICK_TIME`]).
     fn update(&mut self, arena_state: &ArenaState, dt: f32);
+
+    fn try_toggle_ball_cam(&mut self);
 }
 
 /// A full Rocket League game: ball, cars, boost pads/tiles, and physics.

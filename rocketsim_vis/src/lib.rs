@@ -68,6 +68,8 @@ pub use vis_inst::*;
 pub trait ArenaVisExt {
     /// Enable (`true`) or disable (`false`) the 3D visualizer for this arena.
     fn set_vis_enabled(&mut self, vis_enabled: bool);
+
+    fn toggle_ball_cam(&mut self);
 }
 
 impl ArenaVisExt for Arena {
@@ -82,5 +84,9 @@ impl ArenaVisExt for Arena {
             }
             _ => {}
         }
+    }
+
+    fn toggle_ball_cam(&mut self) {
+        self.vis.as_mut().unwrap().try_toggle_ball_cam();
     }
 }

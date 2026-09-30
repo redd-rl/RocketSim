@@ -7,9 +7,7 @@
 
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use glam::Vec3A;
-use rocketsim::{
-    Arena, ArenaConfig, CarBodyConfig, CarControls, GameMode, Team, init_from_default,
-};
+use rocketsim::{init_from_default, Arena, ArenaConfig, CarBodyConfig, CarControls, GameMode, MutatorConfig, Team};
 use rocketsim_vis::ArenaVisExt;
 use gilrs::{Gilrs, Button, Axis};
 
@@ -54,12 +52,14 @@ fn determine_keyboard_controls(device: &DeviceState, controls: CarControls) -> C
     output_controls
 }
 
-fn determine_controller_controls(gilrs: &mut Gilrs, controls: CarControls) -> (CarControls, bool) {
+fn determine_controller_controls(gilrs: &mut Gilrs, controls: CarControls) -> (CarControls, bool, bool) {
     while let Some(_) = gilrs.next_event() {}
 
     let mut output_controls = controls.clone();
 
     let mut ball_cam = false;
+
+    let mut start_dribble = false;
 
     let deadzone = 0.1;
     let trigger_deadzone = 0.05;
@@ -118,9 +118,11 @@ fn determine_controller_controls(gilrs: &mut Gilrs, controls: CarControls) -> (C
         if air_roll_left {
             output_controls.roll -= 1.0;
         }
+
+        start_dribble = gamepad.is_pressed(Button::DPadUp);
     }
 
-    (output_controls, ball_cam)
+    (output_controls, ball_cam, start_dribble)
 }
 
 // fn print_controls(controls: CarControls) {
@@ -136,12 +138,19 @@ fn determine_controller_controls(gilrs: &mut Gilrs, controls: CarControls) -> (C
 
 fn main() {
     init_from_default(true).unwrap();
+
+    let mut mutators = MutatorConfig::default();
+    mutators.boost_used_per_second = 0.0;
+
     let mut arena = Arena::new_with_config(ArenaConfig {
         rng_seed: Some(0),
-        ..ArenaConfig::new(GameMode::Soccar)
+        ..ArenaConfig::new(GameMode::Soccar).with_mutators(mutators)
     });
 
     let mut gilrs = Gilrs::new().unwrap();
+
+    let mut prev_ball_cam = false;
+    let mut prev_start_dribble = false;
 
     for (_id, gamepad) in gilrs.gamepads() {
         println!("Detected gamepad: {}", gamepad.name());
@@ -169,25 +178,29 @@ fn main() {
         // check if we have any controllers plugged in
         let connected_controllers = gilrs.gamepads().next().is_some();
 
-        let mut _ball_cam = false;
+        let mut ball_cam = false;
+        let mut start_dribble = false;
 
         if connected_controllers {
-            (controls, _ball_cam) = determine_controller_controls(&mut gilrs, controls);
+            (controls, ball_cam, start_dribble) = determine_controller_controls(&mut gilrs, controls);
         }
 
+        if ball_cam == true && ball_cam != prev_ball_cam {
+            arena.toggle_ball_cam();
+        }
+
+        prev_ball_cam = ball_cam;
+
         // print_controls(controls);
+
+        let _ = controls.clamp();
 
         // Reset arena
         if pressed_keys.contains(&Keycode::Backspace) || arena.tick_count() == 0 {
             arena.reset_to_random_kickoff(None);
         }
 
-        let mut car_state = *arena.get_car_state(car_idx);
-        car_state.boost = 100.0;
-        // println!("Car state has jump: {}", car_state.has_flip_or_jump());
-        arena.set_car_state(car_idx, car_state);
-
-        if pressed_keys.contains(&Keycode::Key2) {
+        if pressed_keys.contains(&Keycode::Key2) || (start_dribble && start_dribble != prev_start_dribble) {
             // Teleport ball to dribble position
             let car_state = arena.get_car_state(car_idx);
 
@@ -201,6 +214,8 @@ fn main() {
             ball_state.phys.vel += Vec3A::new(0.0, 0.0, 1000.0);
             arena.set_ball_state(ball_state);
         }
+
+        prev_start_dribble = start_dribble;
 
         arena.set_car_controls(car_idx, controls);
 

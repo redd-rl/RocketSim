@@ -29,8 +29,8 @@ pub struct CarCameraConfig {
 impl Default for CarCameraConfig {
     fn default() -> Self {
         Self {
-            distance: 300.0,
-            height: 130.0,
+            distance: 270.0,
+            height: 160.0,
             tilt_ball_min_height: 100.0,
             tilt_ball_max_height: 500.0,
             tilt_min_height_scale: 0.2,

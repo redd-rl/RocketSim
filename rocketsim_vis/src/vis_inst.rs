@@ -49,6 +49,7 @@ impl VisInst {
         let models = vis_asset_loader::load_models(game_mode, &arena_meshes);
         let textures = vis_asset_loader::load_textures();
 
+
         let shared_state = SharedVisRenderState::new(RwLock::new(VisRenderState::default()));
         let shader_srcs = vec![
             (
@@ -125,7 +126,6 @@ impl VisInst {
         new_render_state.camera_fov_deg = self.camera_man.config().fov_degrees;
     }
 }
-
 impl Vis for VisInst {
     fn update(&mut self, astate: &ArenaState, dt: f32) {
         assert_eq!(astate.game_mode(), self.game_mode);
@@ -353,10 +353,15 @@ impl Vis for VisInst {
                         _ => {}
                     }
                 }
-            }
+
         }
+    }
 
         *self.shared_state.write().unwrap() = new_render_state;
         self.total_updates += 1;
+    }
+
+    fn try_toggle_ball_cam(&mut self) {
+        self.camera_man.try_toggle_ball_cam();
     }
 }
